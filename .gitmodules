@@ -4,3 +4,9 @@
 [submodule "hardware/jeelabs"]
 	path = hardware/jeelabs
 	url = https://github.com/473856/jeelabs
+[submodule "libraries/OneWire"]
+	path = libraries/OneWire
+	url = https://github.com/473856/OneWire
+[submodule "libraries/dallas-temperature-control"]
+	path = libraries/dallas-temperature-control
+	url = https://github.com/473856/dallas-temperature-control
