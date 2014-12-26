@@ -1,0 +1,3 @@
+[submodule "jeelib"]
+	path = jeelib
+	url = https://github.com/473856/jeelib
