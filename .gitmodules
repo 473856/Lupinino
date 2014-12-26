@@ -1,3 +1,6 @@
 [submodule "jeelib"]
 	path = libraries/jeelib
 	url = https://github.com/473856/jeelib
+[submodule "hardware/jeelabs"]
+	path = hardware/jeelabs
+	url = https://github.com/473856/jeelabs
