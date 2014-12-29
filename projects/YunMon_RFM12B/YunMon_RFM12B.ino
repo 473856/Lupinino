@@ -1,6 +1,13 @@
 /*
 Arduino Yun - Power and temperature measurement
 
+**
+** DOES NOT WORK - ABANDONED
+**
+** - pin 7 = IRQ 4 apparently not suited for photodarlington (is attached to AR9331)
+** - RFM12B hangs ... 
+**
+
 1) Interrupt-driven light pulse detection with ppwh pulses per Wh
   - IRQ 4 = Yun pin 7 > P_prod
   - IRQ 1 = Yun pin 2 > abs(P_prod - P_cons)
@@ -83,6 +90,19 @@ unsigned long pulseTime0, accumulatedPulseTime0, lastTime0, deltaTime0, pulseTim
 //power and energy
 double power0, averagedPower0, power1, averagedPower1;
 
+// JeeLib required for RFM12B
+#include <JeeLib.h>
+
+// mesurement structure for JeeNode micro temperature node
+typedef struct
+{
+    float Vcc;  // Supply voltage
+    float T;    // Temperature reading
+} measurementStruc;
+
+measurementStruc measurement;
+
+
 void setup()
 {
 
@@ -106,13 +126,37 @@ void setup()
     // Start up the OneWire library
     sensors.begin();
 
+    // initialize RFM12B
+    rf12_initialize(1, RF12_868MHZ, 0); // group id = 0 to receive from all groups
+
+    // important for plot.ly
     plotter1.timezone  = "Europe/Berlin"; plotter2.timezone = "Europe/Berlin";
+
+    // current time ...
     millis_current = millis();
 
 }
 
 void loop()
 {
+    // receive RFM12B measurement data packages
+    measurement.Vcc = 0.0;
+    measurement.T = 86.0; // normally, 85.0 = "not valid" for DS18B20. Here, 86.0 = "no package received" 
+    if (rf12_recvDone() && rf12_crc == 0)
+    {
+        // assuming payload structure is correct
+        measurement.Vcc = (rf12_data[0] + 256 * rf12_data[1]) / 100.0;
+        measurement.T = (rf12_data[2] + 256 * rf12_data[3]) / 100.0;
+        //Serial.print("rf12 group = "); Serial.print(rf12_grp);
+
+        // node id is in the first 5 bits of rf12_hdr --> & RF12_HDR_MASK
+        //Serial.print(", rf12 node id  = "); Serial.print(rf12_hdr & RF12_HDR_MASK);
+
+        //Serial.print(", Vcc = "); Serial.print(measurement.Vcc);
+        //Serial.print(", T = "); Serial.println(measurement.T);
+    }
+
+    // main data logging loop
     if (millis() - millis_current > measurementInterval)
     {
 
@@ -126,6 +170,8 @@ void loop()
         dataString += String(averagedPower0); dataString += ",";
         dataString += String(averagedPower1); dataString += ",";
         dataString += String(sensors.getTempCByIndex(0));
+        dataString += String(measurement.Vcc);
+        dataString += String(measurement.T);
 
         // open the file. note that only one file can be open at a time,
         // so you have to close this one before opening another.
