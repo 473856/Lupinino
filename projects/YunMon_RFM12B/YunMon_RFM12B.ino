@@ -1,16 +1,17 @@
 /*
 Arduino Yun - Power and temperature measurement
 
-1) Interrupt-driven light pulse detection on IRQ 0 and 1
-- PV Produktion: pin3 (Yun) = IRQ 0
-- Zweirichtungszaehler: pin2 (Yun) = IRQ 1
-- calculate power based on ppwh pulses per Wh
+1) Interrupt-driven light pulse detection with ppwh pulses per Wh
+  - IRQ 4 = Yun pin 7 > P_prod
+  - IRQ 1 = Yun pin 2 > abs(P_prod - P_cons)
 
-2) OneWire temperature measurement via Dallas DS18B20
+2) IRQ 0 = Yun pin 3 freed up for RFM12B
 
-3) Plot averaged powers to plot.ly as streaming plot
+3) OneWire temperature measurement via Dallas DS18B20
 
-4) Log data to /mnt/sda1/datalogs: timestamp, production [W], abs(production - consumption) [W], temperature [°C]
+4) Plot averaged powers to plot.ly as streaming plot
+
+5) Log data to /mnt/sda1/datalogs: timestamp, production [W], abs(production - consumption) [W], temperature [°C]
 
 
 Possible improvements / backlog:
@@ -19,7 +20,9 @@ Possible improvements / backlog:
 
 History:
 
-141229 moved to git, personal tokens moved out
+141229
+- moved to git, personal tokens moved out
+- IRQ switch in process
 
 140927 Merged with DS18B20 temperature measurement - on port 4, writing to col 4
 
@@ -98,7 +101,7 @@ void setup()
     delay(2000);
 
     // attach interrupt routines
-    attachInterrupt(0, onPulse0, FALLING); attachInterrupt(1, onPulse1, FALLING);
+    attachInterrupt(4, onPulse4, FALLING); attachInterrupt(1, onPulse1, FALLING);
 
     // Start up the OneWire library
     sensors.begin();
@@ -157,7 +160,7 @@ void loop()
 }
 
 //Interrupt routine 0 - PV production
-void onPulse0()
+void onPulse4()
 {
     //pulseCounters
     pulseCount0++; averageCount0++;
