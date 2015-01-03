@@ -1,5 +1,5 @@
 //
-// Receive packets from Temperature Node. Print RF12 group ID, node ID, Vcc, T.
+// Receive packets from Temperate Node. Print RF12 group ID, node ID, Vcc, T.
 //
 
 #include <Bridge.h>
@@ -18,6 +18,10 @@ dataPackageStruc dataPackage;
 
 void setup ()
 {
+    // start-up the Yun bridge
+    Bridge.begin();
+    delay(2000);
+
     Serial.begin(57600);
     Serial.println("Receive packets from Temperature Node, print RF 12 group ID, node ID, Vcc, T");
 
