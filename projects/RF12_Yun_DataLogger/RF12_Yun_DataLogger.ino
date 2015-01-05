@@ -71,8 +71,8 @@ void loop ()
         // assuming payload structure is correct
         dataPackage.rf12_group = rf12_grp;
         dataPackage.rf12_nodeid = rf12_hdr & RF12_HDR_MASK; // node id is in the first 5 bits of rf12_hdr --> & RF12_HDR_MASK
-        dataPackage.Vcc = word(rf12_data[1], rf12_data[0]) / 1000.0;
-        dataPackage.T = word(rf12_data[3], rf12_data[2]) / 100.0;
+        dataPackage.Vcc = int(word(rf12_data[1], rf12_data[0])) / 1000.0;
+        dataPackage.T = int(word(rf12_data[3], rf12_data[2])) / 100.0;
 
         //
         // Log measurement data to file
