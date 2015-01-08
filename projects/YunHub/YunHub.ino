@@ -4,12 +4,15 @@
 //      --> time stamp, RF12 group ID, node ID, Vcc, T
 // 2) raw data file
 //      --> time stamp, RF12 group ID, node ID, all data byte received
+// 3) send via http to emoncms.org
 //
 // Blink LED #13 for each package received
 //
 
 #include <Bridge.h>
+#include <HttpClient.h>
 #include <JeeLib.h>
+#include "mytokens.h"
 
 // temperature node data structure. Timestamp created locally, at time of receival.
 typedef struct
@@ -25,7 +28,7 @@ dataPackageStruc dataPackage;
 
 // data logging and time stamping from http://arduino.cc/en/Tutorial/YunDatalogger
 #include <FileIO.h>
-String fileName, dataStr, rawdataStr;
+String fileName, dataStr, rawdataStr, emonapiurl;
 char __fileName_rawdata[43] = "/mnt/sda1/datalogs/YYYY-MM-DD_RF12_raw.dat";  // value as pattern only, to get size right
 char __fileName_data[39] = "/mnt/sda1/datalogs/YYYY-MM-DD_RF12.dat";  // value as pattern only, to get size right
 
@@ -39,13 +42,15 @@ void setup ()
 
     Serial.begin(57600);
     Serial.println("***");
-    Serial.println("*** 150105 Yun RF12 Data Logger");
+    Serial.println("*** 150108 YunHub: Log RF12 data and send to emoncms.org account");
     Serial.println("***");
     Serial.println("*** Format:     time stamp, RF12 group ID, node ID, Vcc, T");
     Serial.println("***             time stamp, RF12 group ID, node ID, raw data bytes");
     Serial.println("***");
     Serial.println("*** Logging to  /mnt/sda1/datalogs/YYYY-MM-DD_RF12.dat");
     Serial.println("***             /mnt/sda1/datalogs/YYYY-MM-DD_RF12_raw.dat");
+    Serial.println("***");
+    Serial.println("*** Sending to: http://www.emoncms.org");
     Serial.println("***");
 
     // initialize digital pin 13 as an output.
@@ -57,8 +62,12 @@ void setup ()
 
 void loop ()
 {
+
+    HttpClient client;
+
     if (rf12_recvDone() && rf12_crc == 0)
     {
+
         /*
             // debugging only: examine packet byte by byte
             for (byte i = 0; i < rf12_len; ++i) {
@@ -107,7 +116,6 @@ void loop ()
             Serial.println("error opening measurement data log file");
         }
 
-        //
         // Log raw data to separate file, to prevent data gets lost or misinterpreted
         //
         rawdataStr = dataPackage.timeStamp + ","
@@ -141,6 +149,19 @@ void loop ()
             Serial.println("error opening raw data log file");
         }
 
+        // send data for to emoncms.org: node id, T, Vcc
+        emonapiurl = "http://emoncms.org/input/post.json?apikey="
+                     + EMONCMS_APIKEY
+                     + "&node="
+                     + String(dataPackage.rf12_nodeid)
+                     + "&csv="
+                     + String(dataPackage.T)
+                     + ","
+                     + String(dataPackage.Vcc);
+
+        client.get(emonapiurl);
+
+        //
     }
     digitalWrite(13, LOW);   // turn the LED off (HIGH is the voltage level)
 }
