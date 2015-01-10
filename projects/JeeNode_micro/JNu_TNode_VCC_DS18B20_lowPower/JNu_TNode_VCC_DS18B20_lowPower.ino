@@ -12,6 +12,7 @@
 //
 // adapted 130816 matt hodge
 // adapted 141217 to JeeNode v3 peter widmayer
+// extended 150110 to 2 x DS18B20
 //--------------------------------------------------------------------------------------
 
 #include <JeeLib.h> // https://github.com/jcw/jeelib
@@ -42,9 +43,9 @@ ISR(WDT_vect) {
   Sleepy::watchdogEvent();  // interrupt handler for JeeLabs Sleepy power saving
 }
 
-// payload structure. Easiest case, one DS18B20 only: first 2 bytes: supply voltage, next 2 bytes: temperature
+// Payload structure, assuming two DS18B20 sensors. first 2 bytes: supply voltage, next 2x2 bytes: temperatures
 typedef struct {
-  int volt1[2];
+  int volt1[3];
   //      int supplyV;	// Supply voltage
   //	int temp;	// Temperature reading
   //  	int temp2;	// Temperature 2 reading

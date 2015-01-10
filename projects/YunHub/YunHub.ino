@@ -1,9 +1,9 @@
 //
 // Receive RFM12B packets and log to
 // 1) measurement data file = interpreted data, assuming from Temperature Node
-//      --> time stamp, RF12 group ID, node ID, Vcc, T
+//      --> time stamp, RF12 group ID, node ID, Vcc, T1, T2
 // 2) raw data file
-//      --> time stamp, RF12 group ID, node ID, all data byte received
+//      --> time stamp, RF12 group ID, node ID, all data bytes received
 // 3) send via http to emoncms.org
 //
 // Blink LED #13 for each package received
@@ -21,7 +21,8 @@ typedef struct
     byte rf12_group;    // RF12 group ID
     byte rf12_nodeid;   // RF12 node ID
     float Vcc;          // Supply voltage
-    float T;            // Temperature reading
+    float T1;            // Temperature reading
+    float T2;            // Temperature reading
 } dataPackageStruc;
 
 dataPackageStruc dataPackage;
@@ -44,7 +45,7 @@ void setup ()
     Serial.println("***");
     Serial.println("*** 150108 YunHub: Log RF12 data and send to emoncms.org account");
     Serial.println("***");
-    Serial.println("*** Format:     time stamp, RF12 group ID, node ID, Vcc, T");
+    Serial.println("*** Format:     time stamp, RF12 group ID, node ID, Vcc, T1, T2");
     Serial.println("***             time stamp, RF12 group ID, node ID, raw data bytes");
     Serial.println("***");
     Serial.println("*** Logging to  /mnt/sda1/datalogs/YYYY-MM-DD_RF12.dat");
@@ -82,7 +83,8 @@ void loop ()
         dataPackage.rf12_group = rf12_grp;
         dataPackage.rf12_nodeid = rf12_hdr & RF12_HDR_MASK; // node id is in the first 5 bits of rf12_hdr --> & RF12_HDR_MASK
         dataPackage.Vcc = int(word(rf12_data[1], rf12_data[0])) / 1000.0;
-        dataPackage.T = int(word(rf12_data[3], rf12_data[2])) / 100.0;
+        dataPackage.T1 = int(word(rf12_data[3], rf12_data[2])) / 100.0;
+        dataPackage.T2 = int(word(rf12_data[5], rf12_data[4])) / 100.0;
 
         //
         // Log measurement data to file
@@ -92,7 +94,8 @@ void loop ()
                   + String(dataPackage.rf12_group) + ","
                   + String(dataPackage.rf12_nodeid) + ","
                   + String(dataPackage.Vcc) + ","
-                  + String(dataPackage.T);
+                  + String(dataPackage.T1) + ","
+                  + String(dataPackage.T2);
 
         // open file, one one can be open at a time
         fileName = "/mnt/sda1/datalogs/"
@@ -155,9 +158,9 @@ void loop ()
                      + "&node="
                      + String(dataPackage.rf12_nodeid)
                      + "&csv="
-                     + String(dataPackage.T)
-                     + ","
-                     + String(dataPackage.Vcc);
+                     + String(dataPackage.Vcc) + ","
+                     + String(dataPackage.T1) + ","
+                     + String(dataPackage.T2);
 
         client.get(emonapiurl);
         Serial.println(emonapiurl);
