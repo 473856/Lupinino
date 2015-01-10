@@ -160,6 +160,7 @@ void loop ()
                      + String(dataPackage.Vcc);
 
         client.get(emonapiurl);
+        Serial.println(emonapiurl);
 
         //
     }
