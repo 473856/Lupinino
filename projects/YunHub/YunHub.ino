@@ -4,9 +4,11 @@
 //      --> time stamp, RF12 group ID, node ID, Vcc, T1, T2
 // 2) raw data file
 //      --> time stamp, RF12 group ID, node ID, all data bytes received
-// 3) send via http to emoncms.org
+// 3) If from JNµ Temperature Node, send every EMONCMS_SEND_INTERVAL ms via http to emoncms.org
 //
 // Blink LED #13 for each package received
+//
+// 150110 YunHub 1.02
 //
 
 #include <Bridge.h>
@@ -27,12 +29,15 @@ typedef struct
 
 dataPackageStruc dataPackage;
 
+// send every EMONCMS_SEND_INTERVAL milliseconds
+#define EMONCMS_SEND_INTERVAL 60000
+unsigned long timeLastSent = 0;
+
 // data logging and time stamping from http://arduino.cc/en/Tutorial/YunDatalogger
 #include <FileIO.h>
 String fileName, dataStr, rawdataStr, emonapiurl;
 char __fileName_rawdata[43] = "/mnt/sda1/datalogs/YYYY-MM-DD_RF12_raw.dat";  // value as pattern only, to get size right
 char __fileName_data[39] = "/mnt/sda1/datalogs/YYYY-MM-DD_RF12.dat";  // value as pattern only, to get size right
-
 
 void setup ()
 {
@@ -43,7 +48,9 @@ void setup ()
 
     Serial.begin(57600);
     Serial.println("***");
-    Serial.println("*** 150108 YunHub: Log RF12 data and send to emoncms.org account");
+    Serial.println("*** 150111 YunHub 1.02");
+    Serial.println("***");
+    Serial.println("***  Log all incoming RF12 data. Send JNµ temperature data to emoncms.org.");
     Serial.println("***");
     Serial.println("*** Format:     time stamp, RF12 group ID, node ID, Vcc, T1, T2");
     Serial.println("***             time stamp, RF12 group ID, node ID, raw data bytes");
@@ -51,9 +58,7 @@ void setup ()
     Serial.println("*** Logging to  /mnt/sda1/datalogs/YYYY-MM-DD_RF12.dat");
     Serial.println("***             /mnt/sda1/datalogs/YYYY-MM-DD_RF12_raw.dat");
     Serial.println("***");
-    Serial.println("*** Sending to: http://www.emoncms.org");
-    Serial.println("***");
-
+    
     // initialize digital pin 13 as an output.
     pinMode(13, OUTPUT);
 
@@ -144,7 +149,6 @@ void loop ()
             rawdataFile.close();
             // print to the serial port too:
             Serial.println(rawdataStr);
-            Serial.println();
         }
         // if the file isn't open, pop up an error:
         else
@@ -152,18 +156,24 @@ void loop ()
             Serial.println("error opening raw data log file");
         }
 
-        // send data for to emoncms.org: node id, T, Vcc
-        emonapiurl = "http://emoncms.org/input/post.json?apikey="
-                     + EMONCMS_APIKEY
-                     + "&node="
-                     + String(dataPackage.rf12_nodeid)
-                     + "&csv="
-                     + String(dataPackage.Vcc) + ","
-                     + String(dataPackage.T1) + ","
-                     + String(dataPackage.T2);
+        // if from JeeNode µ Temperature Node, then send data for to emoncms.org: node id, Vcc, T1, T2
+        if ((timeLastSent == 0 or millis() - timeLastSent > EMONCMS_SEND_INTERVAL)
+                and dataPackage.rf12_group == 33 and dataPackage.rf12_nodeid == 22)
+        {
+            emonapiurl = "http://emoncms.org/input/post.json?apikey="
+                         + EMONCMS_APIKEY
+                         + "&node="
+                         + String(dataPackage.rf12_nodeid)
+                         + "&csv="
+                         + String(dataPackage.Vcc) + ","
+                         + String(dataPackage.T1) + ","
+                         + String(dataPackage.T2);
 
-        client.get(emonapiurl);
-        Serial.println(emonapiurl);
+            client.get(emonapiurl);
+            timeLastSent = millis();
+            Serial.println(emonapiurl);
+        }
+        Serial.println();
 
         //
     }
