@@ -8,13 +8,12 @@
 //
 // Blink LED #13 for each package received
 //
-// 150126 YunHub 1.03
+// 150202 YunHub 1.03
 //
-// MQTT VERSION - IN TESTING
 
 #include <Bridge.h>
 #include <JeeLib.h>
-#include "mytokens.h"
+// #include "mytokens.h"
 
 // temperature node data structure. Timestamp created locally, at time of receival.
 typedef struct
@@ -37,7 +36,7 @@ char __fileName_data[39] = "/mnt/sda1/datalogs/YYYY-MM-DD_RF12.dat";  // value a
 
 #include <YunClient.h>
 #include <PubSubClient.h>
-char message_buff[100];
+char message_buff[255];
 // Update these with values suitable for your network.
 byte server[] = { 192, 168, 1, 50 };
 
@@ -78,7 +77,7 @@ void setup ()
 
     Serial.begin(57600);
     Serial.println("***");
-    Serial.println("*** 150126 YunHub 1.03");
+    Serial.println("*** 150202 YunHub 1.03");
     Serial.println("***");
     Serial.println("***  Log all incoming RF12 data to SD and publish to MQTT server 192.168.1.50");
     Serial.println("***");
@@ -104,49 +103,68 @@ void loop ()
 
         digitalWrite(13, HIGH);   // turn the LED on (HIGH is the voltage level)
 
-        // assuming payload structure is correct
+        // Connect to MQTT server if not available
+        if (!client.connected())
+        {
+            client.connect("arduinoYunClient");
+            client.publish("ConnectMessage", "YunChen connected.");
+        }
+
+        // identify sender via group & nodeid
+        // node id is in the first 5 bits of rf12_hdr --> & RF12_HDR_MASK
         dataPackage.rf12_group = rf12_grp;
-        dataPackage.rf12_nodeid = rf12_hdr & RF12_HDR_MASK; // node id is in the first 5 bits of rf12_hdr --> & RF12_HDR_MASK
-        dataPackage.Vcc = int(word(rf12_data[1], rf12_data[0])) / 1000.0;
-        dataPackage.T1 = int(word(rf12_data[3], rf12_data[2])) / 100.0;
-        dataPackage.T2 = int(word(rf12_data[5], rf12_data[4])) / 100.0;
+        dataPackage.rf12_nodeid = rf12_hdr & RF12_HDR_MASK;
 
-        //
-        // Log measurement data to file
-        //
-        dataPackage.timeStamp = getTimeStamp();
-        dataStr = dataPackage.timeStamp + ","
-                  + String(dataPackage.rf12_group) + ","
-                  + String(dataPackage.rf12_nodeid) + ","
-                  + String(dataPackage.Vcc) + ","
-                  + String(dataPackage.T1) + ","
-                  + String(dataPackage.T2);
 
-        // open file, one one can be open at a time
-        fileName = "/mnt/sda1/datalogs/"
-                   + dataPackage.timeStamp.substring(0, 10)
-                   + "_RF12.dat";
-        // convert fileName string to char array
-        fileName.toCharArray(__fileName_data, sizeof(__fileName_data));
-        File dataFile = FileSystem.open(__fileName_data, FILE_APPEND);
-
-        // if the file is available, write to it:
-        if (dataFile)
+        //  Log and publish interpretated date for TNode (group 33, id 22)
+        if (dataPackage.rf12_group == 33 and dataPackage.rf12_nodeid == 22)
         {
-            dataFile.println(dataStr);
-            dataFile.close();
-            // print to the serial port too:
-            Serial.println(dataStr);
-        }
-        // if the file isn't open, pop up an error:
-        else
-        {
-            Serial.print("Error opening data log file ");
-            Serial.println(fileName);
+            dataPackage.Vcc = int(word(rf12_data[1], rf12_data[0])) / 1000.0;
+            dataPackage.T1 = int(word(rf12_data[3], rf12_data[2])) / 100.0;
+            dataPackage.T2 = int(word(rf12_data[5], rf12_data[4])) / 100.0;
+            //
+            // Log measurement data to file
+            //
+            dataPackage.timeStamp = getTimeStamp();
+            dataStr = dataPackage.timeStamp + ","
+                      + String(dataPackage.rf12_group) + ","
+                      + String(dataPackage.rf12_nodeid) + ","
+                      + String(dataPackage.Vcc) + ","
+                      + String(dataPackage.T1) + ","
+                      + String(dataPackage.T2);
+
+            // open file, one one can be open at a time
+            fileName = "/mnt/sda1/datalogs/"
+                       + dataPackage.timeStamp.substring(0, 10)
+                       + "_RF12.dat";
+            // convert fileName string to char array
+            fileName.toCharArray(__fileName_data, sizeof(__fileName_data));
+            File dataFile = FileSystem.open(__fileName_data, FILE_APPEND);
+
+            // if the file is available, write to it:
+            if (dataFile)
+            {
+                dataFile.println(dataStr);
+                dataFile.close();
+                // print to the serial port too:
+                Serial.println(dataStr);
+            }
+            // if the file isn't open, pop up an error:
+            else
+            {
+                Serial.print("Error opening data log file ");
+                Serial.println(fileName);
+            }
+
+            // publish interpreted TNode data to MQTT server
+            dataStr.toCharArray(message_buff, 255);
+            if (client.publish("TNode", message_buff))
+            {
+                Serial.println("TNode data published to MQTT server.");
+            }
         }
 
-        // Log raw data to separate file, to prevent data gets lost or misinterpreted
-        //
+        //  Log and publish all raw data separately, to avoid loss or misinterpretation
         rawdataStr = dataPackage.timeStamp + ","
                      + String(dataPackage.rf12_group) + ","
                      + String(dataPackage.rf12_nodeid);
@@ -178,18 +196,11 @@ void loop ()
             Serial.println(fileName);
         }
 
-        // Connect to MQTT server if not available
-        if (!client.connected())
-        {
-            client.connect("arduinoYunClient");
-            client.publish("ConnectMessage", "YunChen connected.");
-        }
-
         // publish to MQTT server
-        dataStr.toCharArray(message_buff, 100);
-        if (client.publish("dataStr", message_buff))
+        rawdataStr.toCharArray(message_buff, 255);
+        if (client.publish("RF12_RawData", message_buff))
         {
-            Serial.println("MQTT message sent.");
+            Serial.println("Raw data published to MQTT server.");
         }
 
         Serial.println();
