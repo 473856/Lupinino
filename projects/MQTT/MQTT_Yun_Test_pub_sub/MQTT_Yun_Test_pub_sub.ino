@@ -7,7 +7,7 @@
   - prints incoming messages to serial
 */
 
-#include <SPI.h>
+//#include <SPI.h>
 #include <YunClient.h>
 #include <PubSubClient.h>
 
