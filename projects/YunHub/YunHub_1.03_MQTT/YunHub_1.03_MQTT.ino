@@ -4,7 +4,7 @@
 //      --> time stamp, RF12 group ID, node ID, Vcc, T1, T2
 // 2) raw data file
 //      --> time stamp, RF12 group ID, node ID, all data bytes received
-// 3) publish to MQTT server 192.168.1.50
+// 3) publish to MQTT server 192.168.1.12
 //
 // Blink LED #13 for each package received
 //
@@ -38,7 +38,7 @@ char __fileName_data[39] = "/mnt/sda1/datalogs/YYYY-MM-DD_RF12.dat";  // value a
 #include <PubSubClient.h>
 char message_buff[255];
 // Update these with values suitable for your network.
-byte server[] = { 192, 168, 1, 50 };
+byte server[] = { 192, 168, 1, 12 };
 
 // ===========================================================
 // MQTT callback function, called for incoming messages
