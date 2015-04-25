@@ -11,7 +11,7 @@ All my stuff around Arduino, JeeNode etc including external Arduino libraries
 
 - jeelib
 
-*Case 2) Copied libraries* where git inclusion does work
+*Case 2) Copied libraries* where git inclusion does not work
 
 - plot.ly for Yun from [plot.ly arduino-api](https://github.com/473856/arduino-api/tree/master/plotly_yun/Arduino)
   - PlotlyYun
