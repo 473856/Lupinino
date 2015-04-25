@@ -17,5 +17,3 @@ All my stuff around Arduino, JeeNode etc including external Arduino libraries
   - PlotlyYun
   - YunMessenger
   - pubsubclient MQTT lib from https://github.com/knolleary/pubsubclient
-
-  Last update 150203 07:32
