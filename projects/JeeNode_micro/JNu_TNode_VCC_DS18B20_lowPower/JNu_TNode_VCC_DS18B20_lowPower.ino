@@ -13,6 +13,9 @@
 // adapted 130816 matt hodge
 // adapted 141217 to JeeNode v3 peter widmayer
 // extended 150110 to 2 x DS18B20
+//
+// 150524 Measurement interval extended from every 5 s to every 60 s
+//   - 3 x NiMH @ 5s > 1..2 weeks, then down at 3.7 V
 //--------------------------------------------------------------------------------------
 
 #include <JeeLib.h> // https://github.com/jcw/jeelib
@@ -24,7 +27,7 @@
 #define ONE_WIRE_BUS 8  // JNu DIO2
 #define tempPower 10    // JNu DIO1: power pin
 
-#define MEASUREMENT_INTERVAL 5000 // valid range 16-65000 ms -> JeeLabs power save duration between measurements
+#define MEASUREMENT_INTERVAL 60000 // valid range 16-65000 ms -> JeeLabs power save duration between measurements
 
 // Setup a oneWire instance to communicate with any OneWire devices
 // (not just Maxim/Dallas temperature ICs)
