@@ -28,7 +28,7 @@ void isr()
 
 void setup()
 {
-  Serial.begin(19200);    // this is here so that we can print the result
+  Serial.begin(57600);    // this is here so that we can print the result
   attachInterrupt(1, isr, RISING);    // enable the interrupt
 }
 
