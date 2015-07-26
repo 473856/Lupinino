@@ -7,7 +7,7 @@
 //
 // Blink LED #13 for each package received
 //
-// 150725 YunHub 1.05
+// 150726 YunHub 1.05
 //
 
 #include <Bridge.h>
@@ -17,7 +17,7 @@
 
 byte rf12_group, rf12_nodeid;
 String timeStamp, dataStr, rawdataStr;
-char message_buff[255];
+char message_buff[128];
 
 // Update these with values suitable for your network.
 byte server[] = { 192, 168, 178, 27 };
@@ -35,7 +35,7 @@ struct
 } TNodeData;
 
 
-// Temperature node data structure. Timestamp created locally, at time of receival.
+// RadioBlip2 data structure. Timestamp created locally, at time of receival.
 struct
 {
     String timeStamp;   // "+%Y-%m-%d %T": format "YYYY-MM-DD hh:mm:ss"
@@ -53,7 +53,7 @@ void callback(char *topic, byte *payload, unsigned int length)
     // counter
     int i = 0;
     // buffer for payload-to-string conversion
-    char message_buff[255];
+    char message_buff[128];
 
     // copy payload to buffer, append \0
     for (i = 0; i < length; i++)
@@ -74,7 +74,7 @@ void setup ()
 
     Serial.begin(57600);
     Serial.println("***");
-    Serial.println("*** 150725 YunHub 1.05");
+    Serial.println("*** 150726 YunHub 1.05");
     Serial.println("***");
 
     // initialize digital pin 13 as an output.
@@ -119,7 +119,7 @@ void loop ()
         }
 
         // publish to MQTT server
-        rawdataStr.toCharArray(message_buff, 255);
+        rawdataStr.toCharArray(message_buff, 128);
         client.publish("RF12_RawData", message_buff);
 
 
@@ -143,7 +143,7 @@ void loop ()
                       + String(TNodeData.T2);
 
             // publish interpreted TNode data to MQTT server
-            dataStr.toCharArray(message_buff, 255);
+            dataStr.toCharArray(message_buff, 128);
             client.publish("TNode", message_buff);
         }
 
@@ -163,7 +163,7 @@ void loop ()
                       + String(RadioBlip2Data.Vcc);
                       
             // publish interpreted TNode data to MQTT server
-            dataStr.toCharArray(message_buff, 255);
+            dataStr.toCharArray(message_buff, 128);
             client.publish("RadioBlip2", message_buff);
         }
 
