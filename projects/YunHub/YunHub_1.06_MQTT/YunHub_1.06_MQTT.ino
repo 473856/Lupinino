@@ -1,13 +1,15 @@
 //
 // Receive RFM12B packets and publish to  MQTT server 192.168.178.27
+//
+// only for dedicated senders:
+//
 // 1) Temperature Node (group 33, node 22)
 //      --> time stamp, RF12 group ID, node ID, Vcc, T1, T2
-// 2) RFM12B raw data
-//      --> time stamp, RF12 group ID, node ID, all data bytes received
+// 2) RadioBlip2 (group 33, id 17)
 //
 // Blink LED #13 for each package received
 //
-// 150726 YunHub 1.05
+// 150820 YunHub 1.06
 //
 
 #include <Bridge.h>
@@ -74,7 +76,7 @@ void setup ()
 
   Serial.begin(57600);
   Serial.println("***");
-  Serial.println("*** 150726 YunHub 1.05");
+  Serial.println("*** 150820 YunHub 1.06");
   Serial.println("***");
 
   // initialize digital pin 13 as an output.
@@ -107,6 +109,8 @@ void loop ()
     ////////////////////////////////////
     //  Raw Data (group ALL, id ALL)  //
     ////////////////////////////////////
+
+    /* remove raw data log since it freezes for long data strings
     rawdataStr = timeStamp + ","
                  + String(rf12_group) + ","
                  + String(rf12_nodeid);
@@ -117,13 +121,10 @@ void loop ()
     }
 
     // publish to MQTT server
-//    char charBuf[rawDataStr.length()];
-//    rawDataStr.toCharArray(charBuf, rawDataStr.length());
-
-    char charBuf[100];
-    rawdataStr.toCharArray(charBuf, 100);
-
+    char charBuf[rawdataStr.length()];
+    rawdataStr.toCharArray(charBuf, rawdataStr.length());
     client.publish("RF12_RawData", charBuf);
+    */
 
 
     ///////////////////////////////
@@ -146,8 +147,9 @@ void loop ()
                 + String(TNodeData.T2);
 
       // publish interpreted TNode data to MQTT server
-      dataStr.toCharArray(message_buff, 100);
-      client.publish("TNode", message_buff);
+      char charBuf[dataStr.length()];
+      dataStr.toCharArray(charBuf, dataStr.length());
+      client.publish("TNode", charBuf);
     }
 
     ////////////////////////////////////
@@ -166,8 +168,9 @@ void loop ()
                 + String(RadioBlip2Data.Vcc);
 
       // publish interpreted TNode data to MQTT server
-      dataStr.toCharArray(message_buff, 100);
-      client.publish("RadioBlip2", message_buff);
+      char charBuf[dataStr.length()];
+      dataStr.toCharArray(charBuf, dataStr.length());
+      client.publish("RadioBlip2", charBuf);
     }
     digitalWrite(13, LOW);   // turn the LED off (HIGH is the voltage level)
   }
