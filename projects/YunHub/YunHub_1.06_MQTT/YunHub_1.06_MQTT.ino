@@ -147,7 +147,7 @@ void loop ()
                 + String(TNodeData.T2);
 
       // publish interpreted TNode data to MQTT server
-      char charBuf[dataStr.length()];
+      char charBuf[dataStr.length()+1];
       dataStr.toCharArray(charBuf, dataStr.length());
       client.publish("TNode", charBuf);
     }
@@ -168,7 +168,7 @@ void loop ()
                 + String(RadioBlip2Data.Vcc);
 
       // publish interpreted TNode data to MQTT server
-      char charBuf[dataStr.length()];
+      char charBuf[dataStr.length()+1];
       dataStr.toCharArray(charBuf, dataStr.length());
       client.publish("RadioBlip2", charBuf);
     }
