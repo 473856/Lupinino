@@ -84,7 +84,7 @@ void setup ()
 
   rf12_initialize(1, RF12_868MHZ, 0); // group id = 0 to receive from all groups
 
-  // Connect to MQTT server if not available
+  // Initial connect to MQTT server
   client.connect("arduinoYunClient");
   client.publish("ConnectMessage", "YunChen setup: connected.");
 }
