@@ -10,20 +10,20 @@
 #include <avr/sleep.h>
 #include <OneWire.h>
 
-#define DEBUG   0               // set to 1 to trace activity via serial console
+#define DEBUG   1               // set to 1 to trace activity via serial console
 
-#define SET_NODE        4       // wireless node ID 
+#define SET_NODE        2       // wireless node ID 
 #define SET_GROUP       33      // wireless net group 
 #define SEND_MODE       2       // set to 3 if fuses are e=06/h=DE/l=CE, else set to 2
 #define ONEWIRE_PIN     6       // on arduino digital pin 6 = jeenode port 3 DIO line
                                 // on arduino digital pin 7 = jeenode port 4 DIO line
 #define BATT_SENSE_PORT 2       // sense battery voltage on this port
 
-#define PREPTEMP_DELAY  8       // how long to wait for DS18B20 sensor to stabilise, in tenths of seconds
-#define MEASURE_INTERVAL  592   // how long between measurements, in tenths of seconds
+#define PREPTEMP_DELAY  10       // how long to wait for DS18B20 sensor to stabilise, in tenths of seconds
+#define MEASURE_INTERVAL  190   // how long between measurements, in tenths of seconds
                                 // 592 + 8 = 600 i.e. 1 minute
 #if DEBUG
-static const char signature[14] = "[TNode_4]";
+static const char signature[14] = "[TNode_2]";
 #endif
                                 
 // define OneWire object for our DS18B20 temperature sensor
