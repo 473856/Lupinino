@@ -10,18 +10,18 @@
 #include <avr/sleep.h>
 #include <OneWire.h>
 
-#define DEBUG   0               // set to 1 to trace activity via serial console
+#define DEBUG   0              // set to 1 to trace activity via serial console
 
-#define SET_NODE        2       // wireless node ID 
-#define SET_GROUP       33      // wireless net group 
-#define SEND_MODE       2       // set to 3 if fuses are e=06/h=DE/l=CE, else set to 2
-#define ONEWIRE_PIN     6       // on arduino digital pin 6 = jeenode port 3 DIO line
-                                // on arduino digital pin 7 = jeenode port 4 DIO line
-#define BATT_SENSE_PORT 2       // sense battery voltage on this port
+#define SET_NODE        6     // wireless node ID 
+#define SET_GROUP       33    // wireless net group 
+#define SEND_MODE       2     // set to 3 if fuses are e=06/h=DE/l=CE, else set to 2
+#define ONEWIRE_PIN     6     // on arduino digital pin 6 = jeenode port 3 DIO line
+                              // on arduino digital pin 7 = jeenode port 4 DIO line
+#define AIO_SENSE_PORT 2      // sense analog input voltage on this port
 
-#define PREPTEMP_DELAY  10       // how long to wait for DS18B20 sensor to stabilise, in tenths of seconds
+#define PREPTEMP_DELAY  10    // how long to wait for DS18B20 sensor to stabilise, in tenths of seconds
 #define MEASURE_INTERVAL 90   // how long between measurements, in tenths of seconds
-                                // 592 + 8 = 600 i.e. 1 minute
+                              // 592 + 8 = 600 i.e. 1 minute
 #if DEBUG
 static const char signature[14] = "[TNode_2]";
 #endif
@@ -29,7 +29,7 @@ static const char signature[14] = "[TNode_2]";
 // define OneWire object for our DS18B20 temperature sensor
 OneWire ds(ONEWIRE_PIN);  
 // define JeeLib Port for the battery reading
-Port battPort (BATT_SENSE_PORT);
+Port AIOPort (AIO_SENSE_PORT);
 
 // The JeeLib scheduler makes it easy to perform various tasks at various times:
 enum { PREPTEMP, MEASUREALL, TASK_END };
@@ -40,8 +40,7 @@ Scheduler scheduler (schedbuf, TASK_END);
 struct {
     uint32_t packetseq;     // packet serial number 32 bits 1..4294967295
     int tempDS1820B;        // temperature * 16 as 2 bytes
-    byte battVolts;         // battery voltage V * 100 as 1 byte - assumes AA Power Board 
-                            // i.e. V is nominally 1.50 and always less than 2.55 so one byte is enough
+    byte AIOVolts;          // AIO voltage mapped into 1 byte
 } payload;
 
 // because we're using the watchdog timer for low-power waiting
@@ -106,20 +105,22 @@ static int readTemp() {
     return raw;
 }
 
-static byte readBatt() {
+static byte readAIO() {
     byte count = 4;
     int value;
+    AIOPort.digiWrite(HIGH);
     while (count-- > 0) {
-        value = battPort.anaRead();
+        value = AIOPort.anaRead();
     }
-    return  (byte) map(value,0,1013,0,330);
+    AIOPort.digiWrite(LOW);
+    return  (byte) map(value,0,1023,0,255);  // map max AIO range into 1 Byte
 }
 
 // readout all the sensors and other values
 static void doMeasure() {
     
   payload.tempDS1820B = readTemp();
-  payload.battVolts = readBatt();
+  payload.AIOVolts = readAIO();
   sendPayload();
 
     #if SERIAL
@@ -135,6 +136,9 @@ static void serialFlush () {
 }
 
 void setup() {
+
+    AIOPort.mode(OUTPUT);
+    
     rf12_initialize(SET_NODE, RF12_868MHZ, SET_GROUP);
     rf12_sleep(RF12_SLEEP);
     
@@ -143,7 +147,7 @@ void setup() {
         Serial.print(signature);
         serialFlush();
     #endif
-    
+   
     scheduler.timer(PREPTEMP, 0);       // start the measurement loop going
 
 }
